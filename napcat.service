@@ -1,0 +1,23 @@
+[Unit]
+Description=Napcat QQ Bot Service
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/root/Napcat/opt/QQ
+# 关键：通过 xvfb-run 提供虚拟图形环境
+ExecStart=/usr/bin/xvfb-run -a /root/Napcat/opt/QQ/qq --no-sandbox --args --loader resources/app/app_launcher/napcat/napcat.js
+Restart=always
+RestartSec=5
+KillMode=control-group
+TimeoutSec=30
+PrivateTmp=true
+# 允许访问 X 服务器相关资源（新增）
+Environment="DISPLAY=:99"
+NoNewPrivileges=false  # 原配置可能限制过严，放宽以兼容 Xvfb
+
+[Install]
+WantedBy=multi-user.target
