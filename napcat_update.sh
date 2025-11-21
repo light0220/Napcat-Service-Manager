@@ -6,9 +6,8 @@ NAPCAT_DIR="/root/Napcat"
 UPDATE_LOG="/var/log/napcat_update.log"
 INSTALL_SCRIPT="napcat.sh"
 INSTALL_URL="https://nclatest.znin.net/NapNeko/NapCat-Installer/main/script/install.sh"
-# 新增API配置
-LOCAL_API_URL="http://localhost:6099/api/base/GetNapCatVersion"
-API_KEY="eyJEYXRhIjp7IkNyZWF0ZWRUaW1lIjoxNzYzNjA2MzE2NTIzLCJIYXNoRW5jb2RlZCI6ImM3YmEyNmJmMTZkZjBkZGIzNGRkNWI4ZWI1YTIzNmFlMmZiMDc1MTk3ZGJlYjliZGQyZDk4M2RiOWQxMzFjYjgifSwiSG1hYyI6IjdjMTM2YTMxMjE5N2ZiNGQ3YTU2NzdlOTA1YjUwYTY3MjEzYjMwYTM2OWE1YjIwNzBjOTFmYjQ1OWJlMTgyODUifQ=="
+# 更新API配置
+LOCAL_API_URL="http://localhost:7777/get_version_info"
 MAX_RETRIES=3  # 最大重试次数
 RETRY_DELAY=10  # 重试间隔（秒）
 
@@ -33,19 +32,21 @@ check_running() {
     fi
 }
 
-# 新增：使用curl获取当前版本（通过本地API）
+# 更新：使用curl POST请求获取当前版本（通过本地API）
 get_current_version() {
     local retries=$MAX_RETRIES
     local version="unknown"
     
     while [ $retries -gt 0 ]; do
-        # 使用curl发送请求，带Authorization头
-        response=$(curl -sSL -H "Authorization: Bearer $API_KEY" "$LOCAL_API_URL" 2>>"$UPDATE_LOG")
+        # 使用curl发送POST请求，带Content-Type头和空JSON数据
+        response=$(curl -sSL --location --request POST "$LOCAL_API_URL" \
+            --header "Content-Type: application/json" \
+            --data-raw "{}" 2>>"$UPDATE_LOG")
         
         # 检查响应是否有效并解析JSON
         if [ -n "$response" ]; then
-            # 使用grep和sed提取version字段（简单JSON解析）
-            version=$(echo "$response" | grep -o '"version":"[^"]*' | sed 's/"version":"//')
+            # 提取app_version字段
+            version=$(echo "$response" | grep -o '"app_version":"[^"]*' | sed 's/"app_version":"//')
             if [ -n "$version" ]; then
                 echo "$version"
                 return 0
