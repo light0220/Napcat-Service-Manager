@@ -7,9 +7,10 @@ UPDATE_LOG="/var/log/napcat_update.log"
 INSTALL_SCRIPT="napcat.sh"
 INSTALL_URL="https://nclatest.znin.net/NapNeko/NapCat-Installer/main/script/install.sh"
 # 版本检查API配置
-LATEST_VERSION_URL="https://api.github.com/repos/NapNeko/NapCat/releases/latest"  # 示例：GitHub最新版本API
+LATEST_VERSION_URL="https://github.com/NapNeko/NapCatQQ/releases/latest"  # 修正仓库地址
 LOCAL_API_URL="http://localhost:7777/get_version_info"
 RETRY_DELAY=10  # 重试间隔（秒）
+MAX_RETRIES=3   # 新增最大重试次数定义
 
 # 颜色定义
 RED='\033[0;31m'
@@ -45,7 +46,7 @@ get_current_version() {
         
         # 检查响应是否有效并解析JSON
         if [ -n "$response" ]; then
-            # 使用grep和sed提取version字段
+            # 修正解析路径，从data对象中提取app_version
             version=$(echo "$response" | grep -o '"app_version":"[^"]*' | sed 's/"app_version":"//')
             if [ -n "$version" ]; then
                 echo "$version"
@@ -62,19 +63,20 @@ get_current_version() {
     return 1
 }
 
-# 获取最新版本（通过远程API，需根据实际更新源调整）
+# 获取最新版本（通过GitHub最新发布页面重定向）
 get_latest_version() {
     local retries=$MAX_RETRIES
     local version="unknown"
     
     while [ $retries -gt 0 ]; do
-        # 示例：从GitHub Releases获取最新版本（需根据实际情况修改）
-        response=$(curl -sSL "$LATEST_VERSION_URL" 2>>"$UPDATE_LOG")
+        # 通过跟随重定向获取最新版本标签
+        # -I 只获取响应头，-L 跟随重定向
+        response=$(curl -sSL -I -L "$LATEST_VERSION_URL" 2>>"$UPDATE_LOG")
         
         if [ -n "$response" ]; then
-            # 提取tag_name作为最新版本（GitHub规范），若为其他源需调整解析规则
-            version=$(echo "$response" | grep -o '"tag_name":"[^"]*' | sed 's/"tag_name":"//')
-            if [ -n "$version" ]; then
+            # 从Location头中提取版本号（GitHub最新发布会重定向到具体版本页面）
+            version=$(echo "$response" | grep -i 'Location:' | awk -F '/' '{print $NF}' | tr -d '\r')
+            if [ -n "$version" ] && [ "$version" != "latest" ]; then
                 echo "$version"
                 return 0
             fi
