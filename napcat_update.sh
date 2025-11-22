@@ -94,7 +94,13 @@ get_latest_version() {
 
 # 比较版本号
 version_gt() {
-    [ "$(printf "%s\n" "$1" "$2" | sort -V | head -n1)" = "$2" ]
+    # 使用sort -V进行版本排序，然后比较
+    local sorted_versions=$(printf "%s\n" "$1" "$2" | sort -V)
+    local first_version=$(echo "$sorted_versions" | head -n1)
+    local second_version=$(echo "$sorted_versions" | tail -n1)
+    
+    # 如果排序后第一个版本不等于第二个版本，且第一个版本等于$2，则说明$1 > $2
+    [ "$first_version" != "$second_version" ] && [ "$first_version" = "$2" ]
 }
 
 # 带重试的下载函数
