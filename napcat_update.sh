@@ -3,14 +3,15 @@
 
 # 配置
 NAPCAT_DIR="/root/Napcat"
-UPDATE_LOG="/var/log/napcat_update.log"
+UPDATE_DIR="/var/log/napcat_update"  # 日志目录
+UPDATE_LOG="${UPDATE_DIR}/napcat_update_$(date +%Y%m%d).log"  # 带日期的日志文件
 INSTALL_SCRIPT="napcat.sh"
 INSTALL_URL="https://nclatest.znin.net/NapNeko/NapCat-Installer/main/script/install.sh"
 # 版本检查API配置
-LATEST_VERSION_URL="https://github.com/NapNeko/NapCatQQ/releases/latest"  # 修正仓库地址
+LATEST_VERSION_URL="https://github.com/NapNeko/NapCatQQ/releases/latest"
 LOCAL_API_URL="http://localhost:7777/get_version_info"
 RETRY_DELAY=10  # 重试间隔（秒）
-MAX_RETRIES=3   # 新增最大重试次数定义
+MAX_RETRIES=3   # 最大重试次数定义
 
 # 颜色定义
 RED='\033[0;31m'
@@ -46,7 +47,7 @@ get_current_version() {
         
         # 检查响应是否有效并解析JSON
         if [ -n "$response" ]; then
-            # 修正解析路径，从data对象中提取app_version
+            # 从data对象中提取app_version
             version=$(echo "$response" | grep -o '"app_version":"[^"]*' | sed 's/"app_version":"//')
             if [ -n "$version" ]; then
                 echo "$version"
@@ -74,7 +75,7 @@ get_latest_version() {
         response=$(curl -sSL -I -L "$LATEST_VERSION_URL" 2>>"$UPDATE_LOG")
         
         if [ -n "$response" ]; then
-            # 从Location头中提取版本号（GitHub最新发布会重定向到具体版本页面）
+            # 从Location头中提取版本号
             version=$(echo "$response" | grep -i 'Location:' | awk -F '/' '{print $NF}' | tr -d '\r')
             if [ -n "$version" ] && [ "$version" != "latest" ]; then
                 echo "$version"
@@ -91,12 +92,9 @@ get_latest_version() {
     return 1
 }
 
-# 比较版本号（简单比较，适用于vX.Y.Z格式）
+# 比较版本号
 version_gt() {
-    # 移除版本号中的v前缀进行比较
-    local ver1=$(echo "$1" | sed 's/^v//')
-    local ver2=$(echo "$2" | sed 's/^v//')
-    [ "$(printf "%s\n" "$ver1" "$ver2" | sort -V | tail -n1)" = "$ver1" ] && [ "$ver1" != "$ver2" ]
+    [ "$(printf "%s\n" "$1" "$2" | sort -V | head -n1)" = "$2" ]
 }
 
 # 带重试的下载函数
@@ -152,6 +150,9 @@ execute_install_with_retry() {
 
 # 主更新流程
 main() {
+    # 创建日志目录（若不存在）
+    mkdir -p "$UPDATE_DIR"
+    # 清空当前日志文件
     > "$UPDATE_LOG"
     log "======================================"
     log "开始Napcat自动更新检查"
