@@ -13,12 +13,6 @@
 sudo ./install_napcat_services.sh
 ```
 
-安装脚本会自动完成：
-
-1. 安装systemd服务
-2. 配置自动更新脚本
-3. 设置定时任务(每天凌晨3点检查更新)
-
 ## 服务管理
 
 ```bash
@@ -37,7 +31,7 @@ sudo journalctl -u napcat -f
 
 ## 更新管理
 
-为方便脚本检测本地当前版本，需在NapCat配置相应HTTP服务器，默认为http://localhost:7777。可以自行修改但要保证napcat_update.sh中LOCAL_API_URL="http://localhost:7777/get_version_info"的服务器地址与你修改的地址相同。
+为方便脚本检测本地当前版本，需在NapCat配置相应HTTP服务器，默认为 `http://localhost:7777`。可以自行设置，但要保证 `napcat_update.sh`中 `LOCAL_API_URL`的服务器地址与你修改的地址相同。
 
 ```bash
 # 手动更新
