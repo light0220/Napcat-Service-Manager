@@ -73,8 +73,8 @@ install_update_script() {
     chmod +x /usr/local/bin/napcat_update.sh
     
     # 创建日志文件
-    touch /var/log/napcat_update.log
-    chmod 644 /var/log/napcat_update.log
+    # touch /var/log/napcat_update.log
+    # chmod 644 /var/log/napcat_update.log
 }
 
 # 配置定时任务
@@ -104,7 +104,7 @@ show_completion_info() {
     log ""
     log "更新相关:"
     log "  手动更新: /usr/local/bin/napcat_update.sh"
-    log "  更新日志: /var/log/napcat_update.log"
+    log "  更新日志目录: /var/log/napcat_update/"
     log "  自动更新时间: 每天凌晨3点"
     log "======================================"
 }
