@@ -1,5 +1,4 @@
 #!/bin/bash
-# napcat_update.sh - 自动更新Napcat（带详细日志和重试机制）
 
 # 配置
 NAPCAT_DIR="/root/Napcat"
@@ -37,7 +36,7 @@ check_running() {
 # 更新：使用curl POST请求获取当前版本（通过本地API）
 get_current_version() {
     local retries=$MAX_RETRIES
-    local version="unknown"
+    local version="0.0.0"  # 初始值设为0.0.0
     
     while [ $retries -gt 0 ]; do
         # 使用curl发送POST请求，带Content-Type头和空JSON数据
@@ -60,14 +59,14 @@ get_current_version() {
         sleep $RETRY_DELAY
     done
     
-    echo "unknown"
+    echo "$version"  # 失败时返回0.0.0
     return 1
 }
 
 # 获取最新版本（通过GitHub最新发布页面重定向）
 get_latest_version() {
     local retries=$MAX_RETRIES
-    local version="unknown"
+    local version="0.0.0"  # 初始值设为0.0.0
     
     while [ $retries -gt 0 ]; do
         # 通过跟随重定向获取最新版本标签
@@ -88,7 +87,7 @@ get_latest_version() {
         sleep $RETRY_DELAY
     done
     
-    echo "unknown"
+    echo "$version"  # 失败时返回0.0.0
     return 1
 }
 
@@ -176,6 +175,13 @@ main() {
     # 获取当前版本和最新版本
     log "检查当前版本..."
     local current_version=$(get_current_version)
+    
+    # 当前版本获取失败（返回0.0.0且函数返回非0），直接退出
+    if [ $? -ne 0 ]; then
+        log "${RED}获取当前版本失败，无法继续更新流程${NC}"
+        exit 1
+    fi
+
     log "当前版本: $current_version"
     
     log "检查最新版本..."
@@ -183,8 +189,8 @@ main() {
     log "最新版本: $latest_version"
     
     # 版本检查与比较
-    if [ "$current_version" = "unknown" ] || [ "$latest_version" = "unknown" ]; then
-        log "${YELLOW}版本信息获取不完整，无法判断是否需要更新${NC}"
+    if [ "$latest_version" = "0.0.0" ]; then
+        log "${YELLOW}最新版本信息获取失败，无法判断是否需要更新${NC}"
         exit 1
     fi
     
