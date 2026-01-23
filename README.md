@@ -16,11 +16,13 @@ Napcat的systemd服务管理工具，提供开机自启、自动更新、状态�
 
 ## 文件结构
 
+```
 .
-├── install_napcat_services.sh    # 一键安装脚本
-├── napcat_update.sh          # 自动更新脚本
-├── napcat.service             # systemd服务配置文件
-└── README.md                  # 项目说明文档
+├── install_napcat_services.sh      # 一键安装脚本
+├── napcat_update.sh                # 自动更新脚本
+├── napcat.service                  # systemd服务配置文件
+└── README.md                       # 项目说明文档
+```
 
 ## 一键安装
 
