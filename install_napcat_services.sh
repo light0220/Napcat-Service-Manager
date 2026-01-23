@@ -1,3 +1,10 @@
+###
+ # @作    者 : 北极星光 light22@126.com
+ # @创建时间 : 2025-10-30 15:46:31
+ # @最后修改 : 2026-01-23 16:16:58
+ # @修 改 者 : 北极星光
+### 
+
 #!/bin/bash
 # install_napcat_services.sh - 安装Napcat开机自启动和自动更新服务
 
@@ -20,21 +27,63 @@ check_root() {
     fi
 }
 
-# 检查Napcat安装目录
+# 自动安装Napcat
+install_napcat() {
+    log "${YELLOW}未检测到Napcat，开始自动安装...${NC}"
+    
+    # 检查并安装curl（用于下载安装脚本）
+    if ! command -v curl &> /dev/null; then
+        log "${YELLOW}未安装curl，正在安装...${NC}"
+        apt update > /dev/null 2>&1 || log "${YELLOW}apt更新失败，尝试继续安装curl${NC}"
+        apt install -y curl > /dev/null 2>&1
+        if ! command -v curl &> /dev/null; then
+            log "${RED}错误: 安装curl失败，无法下载Napcat安装脚本${NC}"
+            exit 1
+        fi
+    fi
+
+    # 定义安装脚本下载路径
+    INSTALL_SCRIPT="/tmp/install.sh"
+    # 下载Napcat安装脚本
+    log "下载Napcat安装脚本..."
+    if ! curl -fsSL https://nclatest.znin.net/NapNeko/NapCat-Installer/main/script/install.sh -o "${INSTALL_SCRIPT}"; then
+        log "${RED}错误: 下载Napcat安装脚本失败${NC}"
+        exit 1
+    fi
+
+    # 赋予执行权限并执行安装命令
+    chmod +x "${INSTALL_SCRIPT}"
+    log "执行Napcat安装脚本: bash install.sh --docker n --cli n --force"
+    if ! bash "${INSTALL_SCRIPT}" --docker n --cli n --force; then
+        log "${RED}错误: Napcat安装执行失败${NC}"
+        rm -f "${INSTALL_SCRIPT}" # 清理临时脚本
+        exit 1
+    fi
+
+    # 清理临时安装脚本
+    rm -f "${INSTALL_SCRIPT}"
+    log "${GREEN}Napcat自动安装完成${NC}"
+}
+
+# 检查Napcat安装目录（未安装则自动安装）
 check_napcat_installation() {
     INSTALL_BASE_DIR="/root/Napcat"
     QQ_BASE_PATH="${INSTALL_BASE_DIR}/opt/QQ"
     
     log "检查Napcat安装..."
     
-    if [ ! -d "${INSTALL_BASE_DIR}" ]; then
-        log "${RED}错误: 未找到Napcat安装目录 ${INSTALL_BASE_DIR}${NC}"
-        exit 1
-    fi
-    
-    if [ ! -f "${QQ_BASE_PATH}/qq" ]; then
-        log "${RED}错误: QQ可执行文件不存在${NC}"
-        exit 1
+    # 检查核心文件是否存在
+    if [ ! -d "${INSTALL_BASE_DIR}" ] || [ ! -f "${QQ_BASE_PATH}/qq" ]; then
+        log "${YELLOW}Napcat安装目录或核心文件不存在${NC}"
+        # 调用自动安装函数
+        install_napcat
+        
+        # 安装完成后重新检查
+        log "重新检查Napcat安装状态..."
+        if [ ! -d "${INSTALL_BASE_DIR}" ] || [ ! -f "${QQ_BASE_PATH}/qq" ]; then
+            log "${RED}错误: Napcat安装后仍未检测到核心文件${NC}"
+            exit 1
+        fi
     fi
     
     log "${GREEN}Napcat安装检查通过${NC}"
